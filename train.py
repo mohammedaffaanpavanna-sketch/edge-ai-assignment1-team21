@@ -61,6 +61,18 @@ linear_predictions = X_val_lr @ weights
 linear_mae = mae(linear_predictions, yv)
 
 print(f"baseline (linear regression): {linear_mae:.2f} days")
+# Mission 1: identify the largest linear regression errors
+absolute_errors = np.abs(linear_predictions - yv)
+
+largest_error_indices = np.argsort(absolute_errors)[-10:][::-1]
+
+print("\nTop 10 largest linear regression errors:")
+for i in largest_error_indices:
+    print(
+        f"Actual: {yv[i]:.2f}, "
+        f"Predicted: {linear_predictions[i]:.2f}, "
+        f"Error: {absolute_errors[i]:.2f} days"
+    )
 # Mission 1: plot predicted vs actual values
 import matplotlib.pyplot as plt
 
