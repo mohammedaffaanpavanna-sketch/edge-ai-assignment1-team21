@@ -32,3 +32,22 @@ Difference between my estimate and actual mean-baseline MAE: 10.14 days.
 - Branch: mission-1
 - Latest commit: 63c6b74
 - Model files and plots committed and pushed.
+
+## Mission 2: Final Model Selection
+
+Selected architecture: 5 → 16 → 16 → 1
+
+Parameters: 385
+Training MAE: 4.30 days
+Validation MAE: 4.98 days
+
+Expected MAE on 400 unseen readings: approximately 5 days.
+
+This is an estimate based on validation performance, not a
+measured result on the company's hidden dataset.
+
+Reason for selection:
+The 16,16 architecture offers a good balance between accuracy
+and model size. It uses 385 parameters compared with 4,609
+parameters in the 64,64 architecture, while achieving a
+validation MAE of only 0.46 days higher.
