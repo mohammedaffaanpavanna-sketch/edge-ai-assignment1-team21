@@ -51,14 +51,44 @@ ms = lambda t0: round((time.perf_counter() - t0) * 1000, 3)
 
 @app.get("/model_info")
 def model_info():
-    # TODO Mission 2 + 4: return your per-layer table, worked out FROM THE NETWORK (net.net),
-    # not typed in by hand, so it stays right if you change the layer sizes. Exactly these keys:
-    # {"layers": [{"name": "linear1", "in": 5, "out": 32, "params": ..., "bytes_f32": ..., "macs": ...}, ...],
-    #  "total_params": ..., "total_bytes_f32": ..., "total_bytes_int8": ..., "total_macs": ...,
-    #  "fits_300kb_sram_f32": true/false, "fits_300kb_sram_int8": true/false}
-    # Count only the Linear layers (ReLU has no parameters). Clue: a Linear layer m has
-    # m.in_features and m.out_features.
-    return {"layers": [], "total_params": 0}
+    layers = []
+    total_params = 0
+    total_bytes_f32 = 0
+    total_macs = 0
+
+    for layer in net.net:
+        if isinstance(layer, torch.nn.Linear):
+            in_features = layer.in_features
+            out_features = layer.out_features
+            params = sum(p.numel() for p in layer.parameters())
+            bytes_f32 = params * 4
+            macs = in_features * out_features
+
+            layers.append({
+                "name": f"linear{len(layers) + 1}",
+                "in": in_features,
+                "out": out_features,
+                "params": params,
+                "bytes_f32": bytes_f32,
+                "macs": macs
+            })
+
+            total_params += params
+            total_bytes_f32 += bytes_f32
+            total_macs += macs
+
+    total_bytes_int8 = total_params
+    sram_bytes = 300 * 1024
+
+    return {
+        "layers": layers,
+        "total_params": total_params,
+        "total_bytes_f32": total_bytes_f32,
+        "total_bytes_int8": total_bytes_int8,
+        "total_macs": total_macs,
+        "fits_300kb_sram_f32": total_bytes_f32 <= sram_bytes,
+        "fits_300kb_sram_int8": total_bytes_int8 <= sram_bytes
+    }
 
 
 @app.get("/health")

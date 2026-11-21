@@ -1,0 +1,28 @@
+Total rows before cleaning: 2000
+Invalid battery readings: 12
+Invalid temperature readings: 4
+Total glitch rows removed: 16
+Rows remaining after cleaning: 1984
+baseline (predict the mean): 55.14 days
+baseline (linear regression): 23.61 days
+
+Top 10 largest linear regression errors:
+Actual: 327.80, Predicted: 189.55, Error: 138.25 days
+Actual: 2.70, Predicted: 113.14, Error: 110.44 days
+Actual: 246.30, Predicted: 140.09, Error: 106.21 days
+Actual: 272.40, Predicted: 176.37, Error: 96.03 days
+Actual: 262.60, Predicted: 171.48, Error: 91.12 days
+Actual: 0.50, Predicted: -86.08, Error: 86.58 days
+Actual: 58.30, Predicted: 141.49, Error: 83.19 days
+Actual: 234.20, Predicted: 152.93, Error: 81.27 days
+Actual: 73.00, Predicted: 153.64, Error: 80.64 days
+Actual: 0.70, Predicted: -76.85, Error: 77.55 days
+  epoch    0  val MAE 70.49 days
+  epoch  300  val MAE 10.26 days
+  epoch  600  val MAE 10.05 days
+  epoch  900  val MAE 10.08 days
+  epoch 1200  val MAE 9.39 days
+  epoch 1499  val MAE 7.80 days
+Training MAE:   7.94 days
+Validation MAE: 7.80 days
+saved model/model.pt and model/config.json

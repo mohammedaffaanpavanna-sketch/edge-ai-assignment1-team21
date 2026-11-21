@@ -44,9 +44,12 @@ idx = rng.permutation(len(df)); n_val = len(df) // 5
 val, tr = df.iloc[idx[:n_val]], df.iloc[idx[n_val:]]
 X, y = tr[FEATURES].to_numpy(np.float32), tr.days_left.to_numpy(np.float32)
 Xv, yv = val[FEATURES].to_numpy(np.float32), val.days_left.to_numpy(np.float32)
-# TODO Mission 2: normalisation. Why must mu and sd come from the TRAINING rows only?
-mu, sd = np.zeros(X.shape[1], np.float32), np.ones(X.shape[1], np.float32)
+# Mission 2: calculate normalization statistics using training data only
+mu = X.mean(axis=0)
+sd = X.std(axis=0)
 
+# Avoid division by zero if any feature has zero standard deviation
+sd[sd == 0] = 1.0
 mae = lambda p, t: float(np.mean(np.abs(p - t)))
 print(f"baseline (predict the mean): {mae(np.full_like(yv, y.mean()), yv):.2f} days")
 # Mission 1: linear regression baseline using least squares
@@ -106,8 +109,11 @@ for ep in range(a.epochs):
         with torch.no_grad():
             print(f"  epoch {ep:4d}  val MAE {mae(net(Xvt).numpy(), yv):.2f} days")
 with torch.no_grad():
+    train_mae = mae(net(Xt).numpy(), y)
     val_mae = mae(net(Xvt).numpy(), yv)
-print(f"network {hidden}:            {val_mae:.2f} days")
+
+print(f"Training MAE:   {train_mae:.2f} days")
+print(f"Validation MAE: {val_mae:.2f} days")
 
 os.makedirs("model", exist_ok=True)
 torch.save(net.state_dict(), "model/model.pt")
