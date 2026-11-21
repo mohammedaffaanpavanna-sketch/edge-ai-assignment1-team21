@@ -1,0 +1,29 @@
+{
+  "team": 21,
+  "hidden": [
+    32,
+    32
+  ],
+  "mu": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "sd": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "features": [
+    "battery_v",
+    "temp_c",
+    "rings_per_day",
+    "wifi_rssi_dbm",
+    "age_months"
+  ],
+  "val_mae": 12.86
+}

@@ -24,11 +24,20 @@ a = ap.parse_args()
 hidden = tuple(int(h) for h in a.hidden.split(","))
 
 df = pd.read_csv(f"data/team_{a.team:02d}_train.csv")
-# TODO Mission 1: find the sensor glitches (plot every column first!) and write a rule that
-# marks them. Say in your report how many you found and why each rule is safe.
-bad = np.zeros(len(df), dtype=bool)
-print(f"{len(df)} rows, {bad.sum()} glitch rows dropped")
-df = df[~bad]
+# Mission 1: identify and remove impossible sensor readings
+bad_battery = df["battery_v"] <= 0
+bad_temperature = df["temp_c"] == -127
+
+# Combine conditions so each row is counted only once
+bad = bad_battery | bad_temperature
+
+print(f"Total rows before cleaning: {len(df)}")
+print(f"Invalid battery readings: {bad_battery.sum()}")
+print(f"Invalid temperature readings: {bad_temperature.sum()}")
+print(f"Total glitch rows removed: {bad.sum()}")
+
+df = df[~bad].copy()
+print(f"Rows remaining after cleaning: {len(df)}")
 
 rng = np.random.default_rng(0)
 idx = rng.permutation(len(df)); n_val = len(df) // 5
@@ -40,9 +49,36 @@ mu, sd = np.zeros(X.shape[1], np.float32), np.ones(X.shape[1], np.float32)
 
 mae = lambda p, t: float(np.mean(np.abs(p - t)))
 print(f"baseline (predict the mean): {mae(np.full_like(yv, y.mean()), yv):.2f} days")
-# TODO Mission 1: a straight-line model (linear regression) as the second baseline.
-# Use np.linalg.lstsq on [X, 1]. Print its validation MAE the same way as the line above.
+# Mission 1: linear regression baseline using least squares
+X_train_lr = np.column_stack([X, np.ones(len(X))])
+X_val_lr = np.column_stack([Xv, np.ones(len(Xv))])
 
+weights, residuals, rank, singular_values = np.linalg.lstsq(
+    X_train_lr, y, rcond=None
+)
+
+linear_predictions = X_val_lr @ weights
+linear_mae = mae(linear_predictions, yv)
+
+print(f"baseline (linear regression): {linear_mae:.2f} days")
+# Mission 1: plot predicted vs actual values
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(7, 5))
+plt.scatter(yv, linear_predictions, alpha=0.6)
+
+# Ideal prediction line
+plt.plot(
+    [yv.min(), yv.max()],
+    [yv.min(), yv.max()],
+    "r--"
+)
+
+plt.xlabel("Actual days left")
+plt.ylabel("Predicted days left")
+plt.title("Linear Regression: Predicted vs Actual")
+plt.savefig("linear_regression_plot.png")
+plt.show()
 torch.manual_seed(0)
 net = BatteryNet(hidden)
 opt = torch.optim.Adam(net.parameters(), lr=3e-3)
