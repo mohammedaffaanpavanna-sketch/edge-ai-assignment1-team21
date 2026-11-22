@@ -154,3 +154,107 @@ Batch processing was significantly faster than sending individual requests. Proc
 
 Keep-alive also reduced network overhead. Overall, the experiments show that communication overhead is much greater than neural network inference time for this application.
 
+
+---
+
+# Mission 4: Would it fit inside the doorbell?
+
+## 1. Current Model Memory
+
+The trained model architecture is 5 -> 16 -> 16 -> 1.
+
+Parameters are calculated using:
+
+Parameters = (input features * output features) + output biases
+
+| Layer | Parameters | Float32 bytes | MACs |
+|---|---:|---:|---:|
+| 5 -> 16 | 96 | 384 | 80 |
+| 16 -> 16 | 272 | 1088 | 256 |
+| 16 -> 1 | 17 | 68 | 16 |
+| Total | 385 | 1540 | 352 |
+
+Float32 weight and bias memory = 1540 bytes.
+Int8 weight and bias memory = 385 bytes.
+
+The largest individual hidden activation contains 16 values.
+Float32 activation memory = 16 * 4 = 64 bytes.
+Int8 activation memory = 16 * 1 = 16 bytes.
+
+These activation figures exclude additional runtime buffers and framework memory.
+
+## 2. Model Width Comparison
+
+For architecture 5 -> w -> w -> 1:
+
+Parameters = w^2 + 8w + 1
+Float32 bytes = Parameters * 4
+Int8 bytes = Parameters
+MACs = w^2 + 6w
+
+| Width | Parameters | Float32 bytes | Int8 bytes | Fits 300 KB SRAM (f32) | Fits 300 KB SRAM (int8) | Fits 8 MB PSRAM (f32/int8) | MACs |
+|---:|---:|---:|---:|---|---|---|---:|
+| 32 | 1281 | 5124 | 1281 | Yes | Yes | Yes / Yes | 1216 |
+| 128 | 17409 | 69636 | 17409 | Yes | Yes | Yes / Yes | 17152 |
+| 256 | 67585 | 270340 | 67585 | Yes | Yes | Yes / Yes | 67072 |
+| 512 | 266241 | 1064964 | 266241 | No | Yes | Yes / Yes | 265216 |
+| 2048 | 4210689 | 16842756 | 4210689 | No | No | No / Yes | 4202496 |
+
+Memory assumptions:
+300 KB = 307200 bytes.
+8 MB = 8388608 bytes.
+The PSRAM comparison considers weights and biases only.
+
+## 3. Exact SRAM Width Limits
+
+For float32, the maximum width that fits within 300 KB is 273.
+At width 274, the model exceeds the limit.
+
+For int8, the maximum width that fits within 300 KB is 550.
+At width 551, the model exceeds the limit.
+
+These calculations consider weights and biases only, not the complete runtime memory requirement.
+
+## 4. ESP32-S3 Prediction Time Estimate
+
+The ESP32-S3 operates at up to 240 MHz.
+
+Espressif's ESP-NN performance benchmark reports 1543 CPU cycles for an optimized fully connected operation with 271 inputs and 3 outputs, using internal memory.
+
+Our model requires 352 MACs per prediction.
+
+Using the benchmark's approximate rate:
+
+1543 / (271 * 3) = 1.90 cycles per MAC
+
+352 * 1.90 = approximately 669 cycles.
+
+669 / 240000000 = approximately 0.0028 ms.
+
+This is a scaled arithmetic estimate, not a direct measurement of our model. Assuming approximately 10 times this time to account for multiple layer calls and additional runtime overhead gives a rough prediction-time estimate of 0.03 ms.
+
+Source: https://github.com/espressif/esp-nn/blob/master/docs/performance.md
+
+## 5. Server vs Local Inference
+
+Running the model locally on the ESP32-S3 is the preferred approach.
+
+Latency: Local inference avoids the additional network delay involved in sending readings to a remote server.
+
+Privacy: Sensor readings can remain on the device instead of being transmitted over the internet.
+
+Cost: Local inference avoids continuous server hosting and request-processing costs.
+
+Power: Local inference avoids the extra communication energy required for every prediction, although actual power consumption depends on the implementation and Wi-Fi usage.
+
+Wi-Fi failure: Local inference continues working even when the Wi-Fi connection is unavailable. Server-based inference would become unavailable without a connection.
+
+The current model is small enough to fit comfortably within the stated memory budget. However, it would need conversion and testing with an embedded inference framework before deployment on the ESP32-S3.
+
+## 6. Mission 4 Conclusion
+
+The current model contains only 385 parameters and requires 1540 bytes in float32 or 385 bytes in int8 for weights and biases.
+
+Even the width-256 model fits within the 300 KB SRAM weight budget in float32. Larger models may require int8 quantization or external PSRAM.
+
+For the current small model, local inference is preferable because it reduces network dependence, improves privacy and avoids server communication costs.
