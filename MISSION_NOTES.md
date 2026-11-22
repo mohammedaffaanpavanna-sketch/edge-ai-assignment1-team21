@@ -181,7 +181,12 @@ The largest individual hidden activation contains 16 values.
 Float32 activation memory = 16 * 4 = 64 bytes.
 Int8 activation memory = 16 * 1 = 16 bytes.
 
-These activation figures exclude additional runtime buffers and framework memory.
+For a conservative estimate using separate input and output buffers:
+Float32 = (16 + 16) * 4 = 128 bytes.
+Int8 = (16 + 16) * 1 = 32 bytes.
+
+Actual peak activation memory depends on buffer reuse and additional
+runtime requirements. These figures exclude framework memory.
 
 ## 2. Model Width Comparison
 
